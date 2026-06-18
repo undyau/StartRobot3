@@ -322,6 +322,30 @@ private fun AnnouncementRow(
     }
 }
 
+/** Keeps its own text buffer so the field can be freely cleared/edited — committing
+ *  [value] (and snapping back) only on each successful parse would otherwise make it
+ *  impossible to delete the existing digits before typing new ones. */
+@Composable
+private fun IntTextField(
+    value: Int,
+    onValueChange: (Int) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+    supportingText: (@Composable () -> Unit)? = null,
+) {
+    var text by remember(value) { mutableStateOf(value.toString()) }
+    OutlinedTextField(
+        value = text,
+        onValueChange = { v ->
+            text = v
+            v.toIntOrNull()?.let(onValueChange)
+        },
+        label = { Text(label) },
+        supportingText = supportingText,
+        modifier = modifier
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AnnouncementEditDialog(
@@ -405,12 +429,10 @@ private fun AnnouncementEditDialog(
                 }
 
                 if (draft.isAnchor) {
-                    OutlinedTextField(
-                        value = draft.anchorOffsetSeconds.toString(),
-                        onValueChange = { v ->
-                            v.toIntOrNull()?.let { draft = draft.copy(anchorOffsetSeconds = it) }
-                        },
-                        label = { Text("Seconds from interval start") },
+                    IntTextField(
+                        value = draft.anchorOffsetSeconds,
+                        onValueChange = { draft = draft.copy(anchorOffsetSeconds = it) },
+                        label = "Seconds from interval start",
                         supportingText = {
                             Text("0 = after prev beep  •  $intervalSeconds = at start beep")
                         },
@@ -442,12 +464,10 @@ private fun AnnouncementEditDialog(
                         }) { Text("Measure duration") }
                     }
                     AnnouncementType.TIME -> Column {
-                        OutlinedTextField(
-                            value = draft.timeOffsetSeconds.toString(),
-                            onValueChange = { v ->
-                                v.toIntOrNull()?.let { draft = draft.copy(timeOffsetSeconds = it) }
-                            },
-                            label = { Text("Offset from next start time (s, negative = before)") },
+                        IntTextField(
+                            value = draft.timeOffsetSeconds,
+                            onValueChange = { draft = draft.copy(timeOffsetSeconds = it) },
+                            label = "Offset from next start time (s, negative = before)",
                             modifier = Modifier.fillMaxWidth()
                         )
                         Text(
@@ -457,12 +477,10 @@ private fun AnnouncementEditDialog(
                         )
                     }
                     AnnouncementType.COUNTDOWN_BEEPS -> Column {
-                        OutlinedTextField(
-                            value = draft.beepCount.toString(),
-                            onValueChange = { v ->
-                                v.toIntOrNull()?.let { draft = draft.copy(beepCount = it) }
-                            },
-                            label = { Text("Number of beeps") },
+                        IntTextField(
+                            value = draft.beepCount,
+                            onValueChange = { draft = draft.copy(beepCount = it) },
+                            label = "Number of beeps",
                             modifier = Modifier.fillMaxWidth()
                         )
                         Text(
@@ -533,9 +551,13 @@ private fun AnnouncementEditDialog(
                     draft.type != AnnouncementType.START_BEEP &&
                     draft.type != AnnouncementType.COUNTDOWN_BEEPS &&
                     draft.type != AnnouncementType.TIME) {
+                    var durationText by remember(draft.estimatedDurationMs) {
+                        mutableStateOf((draft.estimatedDurationMs / 1000).toString())
+                    }
                     OutlinedTextField(
-                        value = (draft.estimatedDurationMs / 1000).toString(),
+                        value = durationText,
                         onValueChange = { v ->
+                            durationText = v
                             v.toLongOrNull()?.let { draft = draft.copy(estimatedDurationMs = it * 1000) }
                         },
                         label = { Text("Estimated duration (s) — for chain scheduling") },
