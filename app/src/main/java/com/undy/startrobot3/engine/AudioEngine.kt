@@ -29,7 +29,7 @@ class AudioEngine(private val context: Context) {
 
         // Each playClip()/playAssetClip() call spins up its own MediaPlayer (setDataSource +
         // prepareAsync + start), which has its own (smaller) setup latency per clip.
-        const val CLIP_PLAYBACK_OVERHEAD_MS = 150L
+        const val CLIP_PLAYBACK_OVERHEAD_MS = 300L
     }
 
     private var tts: TextToSpeech? = null
