@@ -44,6 +44,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -359,6 +360,24 @@ private fun AnnouncementEditDialog(
     var isRecording by remember { mutableStateOf(false) }
     var recordedFilename by remember { mutableStateOf("") }
     var typeMenuExpanded by remember { mutableStateOf(false) }
+
+    // Re-measure TTS duration whenever the spoken text changes, debounced so a real TTS
+    // synthesis pass doesn't run on every keystroke.
+    LaunchedEffect(draft.type, draft.text) {
+        if (draft.type == AnnouncementType.TEXT) {
+            kotlinx.coroutines.delay(600)
+            vm.measureTextDuration(draft.text) { ms -> draft = draft.copy(estimatedDurationMs = ms) }
+        }
+    }
+
+    // Re-measure a recorded clip's real duration whenever it changes (new recording, or the
+    // dialog opening on an existing clip) — a plain file metadata read, cheap enough to run
+    // unconditionally rather than waiting on the manual "Measure duration" button.
+    LaunchedEffect(draft.type, draft.audioFilePath) {
+        if (draft.type == AnnouncementType.RECORDED_CLIP && draft.audioFilePath.isNotEmpty()) {
+            vm.remeasureClipDuration(draft.audioFilePath) { ms -> draft = draft.copy(estimatedDurationMs = ms) }
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
