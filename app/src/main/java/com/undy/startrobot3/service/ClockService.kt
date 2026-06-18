@@ -56,7 +56,7 @@ class ClockService : Service() {
         val notification = NotificationCompat.Builder(this, channelId)
             .setContentTitle("Start Clock Running")
             .setContentText("Tap to return to clock")
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.mipmap.ic_launcher_foreground)
             .setContentIntent(openIntent)
             .setOngoing(true)
             .build()
