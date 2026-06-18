@@ -25,8 +25,9 @@ class RunViewModel(application: Application) : AndroidViewModel(application) {
     val clockState: StateFlow<ClockEngine.State> = engine.state
 
     /** Same GPS-derived time source the clock engine schedules announcements against, so the
-     *  displayed clock never disagrees with when the anchor actually fires. */
-    fun currentTimeMs(): Long = app.gpsTimeProvider.nowMs()
+     *  displayed clock never disagrees with when the anchor actually fires. Includes the
+     *  delay offset so this matches the engine's own delay-corrected "operating time". */
+    fun currentTimeMs(): Long = app.gpsTimeProvider.nowMs() + delayMinutes.value * 60_000L
 
     /** Start acquiring a GPS fix as soon as this screen is viewed, not just once the clock
      *  is started, so the displayed time (and the first announcement) are accurate from the start. */

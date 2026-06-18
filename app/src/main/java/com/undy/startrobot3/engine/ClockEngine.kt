@@ -74,10 +74,14 @@ class ClockEngine(private val audio: AudioEngine, private val gpsTime: GpsTimePr
         val intervalMs = savedIntervalSeconds * 1_000L
         val nowWall = gpsTime.nowMs()
         val nowElapsed = SystemClock.elapsedRealtime()
-        val adjustedNow = nowWall + savedDelayMinutes * 60_000L
-        // First start-beep boundary after now (adjusted)
-        val firstBoundaryMs = ((adjustedNow / intervalMs) + 1) * intervalMs
-        val firstBoundaryElapsed = nowElapsed + (firstBoundaryMs - nowWall)
+        // "Operating time" (real time corrected by the delay) is the system's notion of
+        // truth: the schedule snaps to the normal interval grid in that corrected time,
+        // and the elapsed wait must be measured from operating-now, not real-now, so the
+        // real-world fire moment lines up with when the (delay-corrected) displayed clock
+        // actually reaches the boundary.
+        val operatingNow = nowWall + savedDelayMinutes * 60_000L
+        val firstBoundaryMs = ((operatingNow / intervalMs) + 1) * intervalMs
+        val firstBoundaryElapsed = nowElapsed + (firstBoundaryMs - operatingNow)
 
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
         scope!!.launch { tickClock() }
@@ -90,7 +94,9 @@ class ClockEngine(private val audio: AudioEngine, private val gpsTime: GpsTimePr
 
     private suspend fun tickClock() {
         while (true) {
-            _state.value = _state.value.copy(currentTimeMs = gpsTime.nowMs())
+            _state.value = _state.value.copy(
+                currentTimeMs = gpsTime.nowMs() + savedDelayMinutes * 60_000L
+            )
             delay(500)
         }
     }
