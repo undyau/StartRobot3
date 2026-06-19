@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy — StartRobot3</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    max-width: 720px;
+    margin: 2rem auto;
+    padding: 0 1.25rem;
+    line-height: 1.6;
+    color: #1a1a1a;
+  }
+  h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.15rem; margin-top: 2rem; border-bottom: 1px solid #ddd; padding-bottom: 0.25rem; }
+  .updated { color: #666; font-size: 0.9rem; margin-top: 0; }
+  code { background: #f3f3f3; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.95em; }
+  footer { margin-top: 3rem; color: #888; font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<h1>Privacy Policy for StartRobot3</h1>
+<p class="updated">Last updated: June 19, 2026</p>
+
+<p>StartRobot3 ("the app") is developed by Andy Simpson. This policy explains what data the app accesses and how it is used.</p>
+
+<h2>Summary</h2>
+<p>StartRobot3 does not collect, store, or transmit any personal data to the developer or to any third party. All data the app uses stays on your device.</p>
+
+<h2>What the app accesses, and why</h2>
+
+<p><strong>Microphone (<code>RECORD_AUDIO</code>)</strong><br>
+Used only when you choose to record a custom announcement clip inside the app (e.g. a recorded voice cue to play during a start sequence). Recordings are saved locally on your device as part of your event configuration and are never uploaded or shared.</p>
+
+<p><strong>Location (<code>ACCESS_FINE_LOCATION</code>)</strong><br>
+Used only to read GPS time signals from satellites so the app's start clock stays accurate even with no cell or internet signal in the field. The app does not record, store, or transmit your geographic position, and does not track your location history. Location is used transiently, in memory, purely to extract a timestamp.</p>
+
+<p><strong>Notifications (<code>POST_NOTIFICATIONS</code>)</strong><br>
+Used to show the persistent foreground-service notification required by Android while the start clock is running, so you can see at a glance that timing is active.</p>
+
+<p><strong>Network access (<code>INTERNET</code>)</strong><br>
+Used only when you choose to load a start list from a URL you provide, instead of a local file. The app fetches that URL directly and parses the IOF XML 3.0 data it returns — it does not send any of your data to that server beyond the standard HTTP request, and does not contact any other server. If you only load start lists from local files, the app makes no network requests at all.</p>
+
+<p><strong>Start list files</strong><br>
+If you load an IOF XML 3.0 start list file, the runner names and start times in that file are read and stored locally in the app's database on your device, solely to drive announcements during the event. This data is never transmitted anywhere and can be cleared by uninstalling the app or clearing app data.</p>
+
+<h2>Data sharing</h2>
+<p>StartRobot3 does not share any data with third parties. There are no analytics, advertising, or crash-reporting SDKs in the app.</p>
+
+<h2>Data retention and deletion</h2>
+<p>All data (start lists, recorded clips, configured announcement chains, settings) is stored locally in app-private storage and is deleted when you uninstall the app or clear its data from Android system settings.</p>
+
+<h2>Children's privacy</h2>
+<p>StartRobot3 is a timing utility for orienteering event organizers and is not directed at children. It does not knowingly collect data from anyone.</p>
+
+<h2>Changes to this policy</h2>
+<p>If this policy changes, the updated version will be posted at this same URL with a revised "Last updated" date.</p>
+
+
+<footer>StartRobot3 Privacy Policy</footer>
+
+</body>
+</html>

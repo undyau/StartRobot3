@@ -23,3 +23,8 @@ local.properties
 
 # Icon asset drop, already integrated into app/src/main/res and icon_source/
 /files.zip
+
+# Release signing credentials (never commit - back these up securely instead)
+keystore.properties
+*.jks
+*.keystore
