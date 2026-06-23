@@ -175,7 +175,8 @@ fun ConfigScreen(vm: ConfigViewModel = viewModel()) {
             }
         }
 
-        items(chains, key = { it.id }) { chain ->
+        val chainsByAnchorTime = chains.sortedBy { it.anchorOffsetSeconds() ?: Int.MAX_VALUE }
+        items(chainsByAnchorTime, key = { it.id }) { chain ->
             ChainCard(chain, vm, intervalSeconds)
         }
 

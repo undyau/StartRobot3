@@ -9,4 +9,7 @@ data class AnnouncementChain(
         val anchor = announcements.firstOrNull { it.isAnchor } ?: return "No anchor"
         return "${anchor.anchorOffsetSeconds}s from start"
     }
+
+    /** Null if the chain has no anchor yet — callers should sort those last. */
+    fun anchorOffsetSeconds(): Int? = announcements.firstOrNull { it.isAnchor }?.anchorOffsetSeconds
 }
