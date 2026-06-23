@@ -1,5 +1,6 @@
 package com.undy.startrobot3.ui.config
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -19,11 +21,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -39,6 +44,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -52,7 +58,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -84,11 +89,10 @@ fun ConfigScreen(vm: ConfigViewModel = viewModel()) {
     val chains by vm.chains.collectAsState()
     val intervalLabel by vm.intervalLabel.collectAsState()
     val intervalSeconds by vm.intervalSeconds.collectAsState()
+    val delayMinutes by vm.delayMinutes.collectAsState()
     val useRecordedTimeSounds by vm.useRecordedTimeSounds.collectAsState()
     var showIntervalMenu by remember { mutableStateOf(false) }
-    var showRecordedSoundsPasswordDialog by remember { mutableStateOf(false) }
-    var recordedSoundsPasswordInput by remember { mutableStateOf("") }
-    var recordedSoundsPasswordError by remember { mutableStateOf(false) }
+    var showDelayControls by remember { mutableStateOf(false) }
 
     LazyColumn(
         modifier = Modifier
@@ -126,28 +130,34 @@ fun ConfigScreen(vm: ConfigViewModel = viewModel()) {
                 }
             }
 
+            Spacer(Modifier.height(8.dp))
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Use recorded number sounds for time",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = if (delayMinutes == 0) "No delay"
+                           else if (delayMinutes > 0) "Delay: +$delayMinutes min"
+                           else "Delay: $delayMinutes min",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (delayMinutes != 0) MaterialTheme.colorScheme.error
+                            else MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Switch(
-                    checked = useRecordedTimeSounds,
-                    onCheckedChange = { checked ->
-                        if (checked) {
-                            recordedSoundsPasswordInput = ""
-                            recordedSoundsPasswordError = false
-                            showRecordedSoundsPasswordDialog = true
-                        } else {
-                            vm.setUseRecordedTimeSounds(false)
-                        }
-                    }
-                )
+                TextButton(onClick = { showDelayControls = !showDelayControls }) {
+                    Text(if (showDelayControls) "Hide" else "Adjust delay")
+                    Spacer(Modifier.size(4.dp))
+                    Icon(
+                        if (showDelayControls) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+
+            AnimatedVisibility(visible = showDelayControls) {
+                DelaySection(delayMinutes, vm)
             }
         }
 
@@ -169,50 +179,70 @@ fun ConfigScreen(vm: ConfigViewModel = viewModel()) {
             ChainCard(chain, vm, intervalSeconds)
         }
 
+        item {
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Use legacy clock voice",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Switch(
+                    checked = useRecordedTimeSounds,
+                    onCheckedChange = { vm.setUseRecordedTimeSounds(it) }
+                )
+            }
+        }
+
         item { Spacer(Modifier.height(80.dp)) }
     }
+}
 
-    if (showRecordedSoundsPasswordDialog) {
-        AlertDialog(
-            onDismissRequest = { showRecordedSoundsPasswordDialog = false },
-            title = { Text("Enable recorded time sounds") },
-            text = {
-                Column {
-                    OutlinedTextField(
-                        value = recordedSoundsPasswordInput,
-                        onValueChange = {
-                            recordedSoundsPasswordInput = it
-                            recordedSoundsPasswordError = false
-                        },
-                        label = { Text("Password") },
-                        visualTransformation = PasswordVisualTransformation(),
-                        singleLine = true,
-                        isError = recordedSoundsPasswordError
-                    )
-                    if (recordedSoundsPasswordError) {
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            "Incorrect password",
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    if (recordedSoundsPasswordInput == "bigfoot") {
-                        vm.setUseRecordedTimeSounds(true)
-                        showRecordedSoundsPasswordDialog = false
-                    } else {
-                        recordedSoundsPasswordError = true
-                    }
-                }) { Text("Enable") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showRecordedSoundsPasswordDialog = false }) { Text("Cancel") }
-            }
-        )
+@Composable
+private fun DelaySection(delayMinutes: Int, vm: ConfigViewModel) {
+    Column(modifier = Modifier.padding(top = 8.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedButton(
+                onClick = { vm.adjustDelay(-1) },
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                modifier = Modifier.weight(1f)
+            ) { Text("− 1 min") }
+            OutlinedButton(
+                onClick = { vm.adjustDelay(1) },
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                modifier = Modifier.weight(1f)
+            ) { Text("+ 1 min") }
+        }
+        Spacer(Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedButton(
+                onClick = { vm.adjustDelay(-5) },
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                modifier = Modifier.weight(1f)
+            ) { Text("− 5 min") }
+            OutlinedButton(
+                onClick = { vm.adjustDelay(5) },
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                modifier = Modifier.weight(1f)
+            ) { Text("+ 5 min") }
+        }
+        Spacer(Modifier.height(8.dp))
+        FilledTonalButton(
+            onClick = { vm.adjustDelay(-delayMinutes) },
+            enabled = delayMinutes != 0,
+            modifier = Modifier.fillMaxWidth()
+        ) { Text("Reset delay") }
     }
 }
 

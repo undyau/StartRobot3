@@ -14,6 +14,7 @@ import com.undy.startrobot3.engine.AudioEngine
 import com.undy.startrobot3.engine.BeepGenerator
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -24,6 +25,7 @@ class ConfigViewModel(application: Application) : AndroidViewModel(application) 
     private val repo = app.eventRepository
     private val prefs = app.eventPreferences
     private val audio = app.audioEngine
+    private val engine = app.clockEngine
 
     val chains: StateFlow<List<AnnouncementChain>> = repo.chains
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -35,6 +37,9 @@ class ConfigViewModel(application: Application) : AndroidViewModel(application) 
         StartInterval.fromSeconds(s).label
     }.stateIn(viewModelScope, SharingStarted.Eagerly, "1 minute")
 
+    val delayMinutes: StateFlow<Int> = prefs.delayMinutes
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
+
     val useRecordedTimeSounds: StateFlow<Boolean> = prefs.useRecordedTimeSounds
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
@@ -43,7 +48,31 @@ class ConfigViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun setInterval(interval: StartInterval) {
-        viewModelScope.launch { prefs.setIntervalSeconds(interval.seconds) }
+        viewModelScope.launch {
+            val oldIntervalSeconds = intervalSeconds.value
+            prefs.setIntervalSeconds(interval.seconds)
+            // Anchors set to the old interval's end (the boundary itself) should track the
+            // new interval's end too, rather than silently landing mid-interval or past it.
+            if (interval.seconds != oldIntervalSeconds) {
+                for (chain in chains.value) {
+                    for (announcement in chain.announcements) {
+                        if (announcement.isAnchor && announcement.anchorOffsetSeconds == oldIntervalSeconds) {
+                            repo.updateAnnouncement(announcement.copy(anchorOffsetSeconds = interval.seconds))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fun adjustDelay(deltaMinutes: Int) {
+        viewModelScope.launch {
+            val current = prefs.delayMinutes.first()
+            prefs.setDelayMinutes(current + deltaMinutes)
+            if (engine.state.value.isRunning) {
+                engine.adjustDelay(deltaMinutes)
+            }
+        }
     }
 
     fun addChain() {

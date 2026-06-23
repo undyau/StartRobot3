@@ -33,6 +33,9 @@ class RunViewModel(application: Application) : AndroidViewModel(application) {
      *  is started, so the displayed time (and the first announcement) are accurate from the start. */
     fun ensureGpsTracking() = app.gpsTimeProvider.start()
 
+    fun gpsHasFix(): Boolean = app.gpsTimeProvider.hasFix
+    fun gpsSatellitesUsed(): Int = app.gpsTimeProvider.satellitesUsed
+
     val delayMinutes = prefs.delayMinutes.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
     // Starters loaded by StartListViewModel and stored in application scope
@@ -70,15 +73,5 @@ class RunViewModel(application: Application) : AndroidViewModel(application) {
             action = ClockService.ACTION_STOP
         }
         getApplication<Application>().startService(svcIntent)
-    }
-
-    fun adjustDelay(deltaMinutes: Int) {
-        viewModelScope.launch {
-            val current = prefs.delayMinutes.first()
-            prefs.setDelayMinutes(current + deltaMinutes)
-            if (engine.state.value.isRunning) {
-                engine.adjustDelay(deltaMinutes)
-            }
-        }
     }
 }
