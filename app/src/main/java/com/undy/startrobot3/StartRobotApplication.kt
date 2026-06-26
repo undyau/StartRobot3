@@ -13,6 +13,9 @@ import com.undy.startrobot3.iof.IofXmlParser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -32,11 +35,13 @@ class StartRobotApplication : Application() {
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val startersCacheFile by lazy { File(filesDir, "starters_cache.json") }
 
-    private var _loadedStarters: List<Starter> = emptyList()
+    private val _loadedStartersFlow = MutableStateFlow<List<Starter>>(emptyList())
+    val loadedStartersFlow: StateFlow<List<Starter>> = _loadedStartersFlow.asStateFlow()
+
     var loadedStarters: List<Starter>
-        get() = _loadedStarters
+        get() = _loadedStartersFlow.value
         set(value) {
-            _loadedStarters = value
+            _loadedStartersFlow.value = value
             appScope.launch {
                 if (value.isNotEmpty()) saveStartersToCache(value)
                 else withContext(Dispatchers.IO) { runCatching { startersCacheFile.delete() } }
@@ -49,7 +54,7 @@ class StartRobotApplication : Application() {
         if (loadedStarters.isNotEmpty()) return
         val cached = loadStartersFromCache()
         if (cached.isNotEmpty()) {
-            _loadedStarters = cached  // bypass setter — no need to re-write what we just read
+            _loadedStartersFlow.value = cached  // bypass setter — no need to re-write what we just read
             return
         }
         val path = eventPreferences.startListPath.first()

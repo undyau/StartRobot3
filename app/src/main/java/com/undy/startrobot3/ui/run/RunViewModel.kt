@@ -49,6 +49,10 @@ class RunViewModel(application: Application) : AndroidViewModel(application) {
 
     fun startClock() {
         viewModelScope.launch {
+            // Await starters so they're guaranteed in-memory before the engine starts,
+            // even if the user taps Start before the background load from cache/URL finishes.
+            app.ensureStartersLoaded()
+
             val intervalSeconds = prefs.intervalSeconds.first()
             val chains = repo.chains.first()
             val delay = prefs.delayMinutes.first()
