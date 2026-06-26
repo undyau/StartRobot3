@@ -22,6 +22,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import java.net.URLDecoder
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -41,8 +43,21 @@ fun StartListScreen(vm: StartListViewModel = viewModel()) {
     val starters by vm.starters.collectAsState()
     val status by vm.status.collectAsState()
     val isLoading by vm.isLoading.collectAsState()
+    val savedPath by vm.startListPath.collectAsState(initial = "")
+    val savedIsUrl by vm.startListIsUrl.collectAsState(initial = false)
+
+    val fileIsActive = !savedIsUrl && savedPath.isNotEmpty()
+    val urlIsActive = savedIsUrl && savedPath.isNotEmpty()
+
     var urlText by remember { mutableStateOf("") }
     var showUrlInput by remember { mutableStateOf(false) }
+
+    LaunchedEffect(savedPath, savedIsUrl) {
+        if (savedIsUrl && savedPath.isNotEmpty()) {
+            urlText = savedPath
+            showUrlInput = true
+        }
+    }
 
     val filePicker = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
@@ -62,15 +77,38 @@ fun StartListScreen(vm: StartListViewModel = viewModel()) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Button(
-                onClick = { filePicker.launch("*/*") },
-                modifier = Modifier.weight(1f)
-            ) { Text("Load from file") }
+            if (fileIsActive) {
+                Button(
+                    onClick = { filePicker.launch("*/*") },
+                    modifier = Modifier.weight(1f)
+                ) { Text("Load from file") }
+            } else {
+                OutlinedButton(
+                    onClick = { filePicker.launch("*/*") },
+                    modifier = Modifier.weight(1f)
+                ) { Text("Load from file") }
+            }
 
-            OutlinedButton(
-                onClick = { showUrlInput = !showUrlInput },
-                modifier = Modifier.weight(1f)
-            ) { Text("Load from URL") }
+            if (urlIsActive) {
+                Button(
+                    onClick = { showUrlInput = !showUrlInput },
+                    modifier = Modifier.weight(1f)
+                ) { Text("Load from URL") }
+            } else {
+                OutlinedButton(
+                    onClick = { showUrlInput = !showUrlInput },
+                    modifier = Modifier.weight(1f)
+                ) { Text("Load from URL") }
+            }
+        }
+
+        if (fileIsActive) {
+            Text(
+                fileDisplayName(savedPath),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 2.dp)
+            )
         }
 
         if (showUrlInput) {
@@ -84,10 +122,7 @@ fun StartListScreen(vm: StartListViewModel = viewModel()) {
             )
             Spacer(Modifier.height(4.dp))
             Button(
-                onClick = {
-                    vm.loadFromUrl(urlText)
-                    showUrlInput = false
-                },
+                onClick = { vm.loadFromUrl(urlText) },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = urlText.isNotBlank()
             ) { Text("Load") }
@@ -149,3 +184,8 @@ fun StartListScreen(vm: StartListViewModel = viewModel()) {
         }
     }
 }
+
+private fun fileDisplayName(uriString: String): String = try {
+    val decoded = URLDecoder.decode(Uri.parse(uriString).lastPathSegment ?: uriString, "UTF-8")
+    decoded.substringAfterLast('/').substringAfterLast(':').ifEmpty { "File" }
+} catch (_: Exception) { "File" }

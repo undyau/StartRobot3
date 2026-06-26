@@ -63,14 +63,16 @@ class StartListViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun loadFromUrl(url: String) {
+        val normalizedUrl = if (url.startsWith("http://") || url.startsWith("https://")) url
+                            else "https://$url"
         viewModelScope.launch {
             _isLoading.value = true
             try {
                 val starters = withContext(Dispatchers.IO) {
-                    URL(url).openStream().use { IofXmlParser.parse(it) }
+                    URL(normalizedUrl).openStream().use { IofXmlParser.parse(it) }
                 }
                 applyStarters(starters)
-                prefs.setStartList(url, isUrl = true)
+                prefs.setStartList(normalizedUrl, isUrl = true)
                 _status.value = "Loaded ${starters.size} starters from URL"
             } catch (e: Exception) {
                 _status.value = "Error loading URL: ${e.message}"
