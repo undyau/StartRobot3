@@ -32,8 +32,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import java.text.DateFormat
+import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 
 @Composable
 fun StartListScreen(vm: StartListViewModel = viewModel()) {
@@ -136,7 +137,7 @@ fun StartListScreen(vm: StartListViewModel = viewModel()) {
                     ) {
                         Text(starter.name, fontWeight = FontWeight.Medium)
                         Text(
-                            DateFormat.getTimeInstance(DateFormat.MEDIUM)
+                            SimpleDateFormat("HH:mm:ss", Locale.getDefault())
                                 .format(Date(starter.startTimeMs)),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant

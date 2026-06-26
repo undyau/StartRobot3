@@ -38,6 +38,10 @@ class RunViewModel(application: Application) : AndroidViewModel(application) {
 
     val delayMinutes = prefs.delayMinutes.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
+    init {
+        viewModelScope.launch { app.ensureStartersLoaded() }
+    }
+
     // Starters loaded by StartListViewModel and stored in application scope
     var loadedStarters: List<Starter>
         get() = app.loadedStarters
